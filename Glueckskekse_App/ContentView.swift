@@ -7,34 +7,101 @@
 
 import SwiftUI
 
-struct ContentView: View {
-    var body: some View {
-        NavigationView {
-            StartScreen()
+// Enum für die Navigationsziele
+enum AppScreen: Hashable {
+    case start
+    case productList
+    case payment(totalSum: Double)
+    case change(totalSum: Double, paidAmount: Double)
+}
+
+// MARK: - Product Model
+struct Product: Identifiable, Codable {
+    let id: UUID
+    var name: String
+    var price: Double
+    var imageFilename: String // Dateiname des gespeicherten Bildes
+    
+    init(id: UUID = UUID(), name: String, price: Double, imageFilename: String) {
+        self.id = id
+        self.name = name
+        self.price = price
+        self.imageFilename = imageFilename
+    }
+}
+
+// MARK: - ProductListViewModel
+class ProductListViewModel: ObservableObject {
+    @Published var products: [Product] = []
+    
+    private let productsKey = "products_key"
+    
+    init() {
+        loadProducts()
+    }
+    
+    func addProduct(_ product: Product) {
+        products.append(product)
+        saveProducts()
+    }
+    
+    func loadProducts() {
+        guard let data = UserDefaults.standard.data(forKey: productsKey) else { return }
+        if let decoded = try? JSONDecoder().decode([Product].self, from: data) {
+            self.products = decoded
         }
-        .navigationViewStyle(StackNavigationViewStyle())
+    }
+    
+    func saveProducts() {
+        if let encoded = try? JSONEncoder().encode(products) {
+            UserDefaults.standard.set(encoded, forKey: productsKey)
+        }
+    }
+    
+    // Hilfsfunktion zum Bildpfad
+    static func imageURL(for filename: String) -> URL {
+        let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        return documents.appendingPathComponent(filename)
+    }
+}
+
+struct ContentView: View {
+    @State private var path = NavigationPath()
+    @StateObject private var productListVM = ProductListViewModel()
+
+    var body: some View {
+        NavigationStack(path: $path) {
+            StartScreen(path: $path)
+                .navigationDestination(for: AppScreen.self) { screen in
+                    switch screen {
+                    case .start:
+                        StartScreen(path: $path)
+                    case .productList:
+                        ProductListScreen(path: $path)
+                    case .payment(let totalSum):
+                        PaymentScreen(totalSum: totalSum, path: $path)
+                    case .change(let totalSum, let paidAmount):
+                        ChangeScreen(totalSum: totalSum, paidAmount: paidAmount, path: $path)
+                    }
+                }
+        }
     }
 }
 
 struct StartScreen: View {
+    @Binding var path: NavigationPath
     var body: some View {
-        
         ZStack {
-            // Hintergrundfarbe
-            Color.mint
-                .edgesIgnoringSafeArea(.all)
-            
+            Color.mint.edgesIgnoringSafeArea(.all)
             VStack(spacing: 20) {
                 Spacer()
-                
-                // Eigenes Logo
-                Image("logo") // Name des Bildes in den Assets
+                Image("logo")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 400, height: 400)
-                
-                // Button
-                NavigationLink(destination: ProductListScreen()) {
+                Button(action: {
+                    path.append(AppScreen.productList)
+                }) {
                     Text("Start")
                         .font(.title)
                         .padding()
@@ -48,61 +115,68 @@ struct StartScreen: View {
     }
 }
 
-// Produktmodell
-struct Product {
-    let name: String
-    let price: Double
-    let image: String
-}
-
 struct ProductListScreen: View {
-    
-    @State private var productCounts: [Int] = Array(repeating: 0, count: 27)
+    @Binding var path: NavigationPath
+    @State private var productCounts: [UUID: Int] = [:]
     @State private var products: [Product] = [
-        Product(name: "Pfirsichmarmelade", price: 4.0, image: "Pfirsichmarmelade"),
-        Product(name: "Aprikosenmarmelade", price: 4.0, image: "Aprikosenmarmelade"),
-        Product(name: "Traubengelee", price: 3.5, image: "Traubengelee"),
-        Product(name: "Bio-Orangenmarmelade", price: 3.5, image: "Bio-Orangenmarmelade"),
-        Product(name: "Bio Chili-Olivenöl", price: 8.0, image: "Bio Chili-Olivenöl"),
-        Product(name: "Bio-Bärlauch Rapsöl", price: 5.0, image: "Bio-Bärlauch Rapsöl"),
-        Product(name: "Bio Zitronen Rapsöl", price: 5.0, image: "Bio Zitronen Rapsöl"),
-        Product(name: "Himbeerbalsamico", price: 7.0, image: "Himbeerbalsamico"),
-        Product(name: "Ingwer-Zitronensirup", price: 5.0, image: "logo"),
-        Product(name: "Zitronenpfeffer in der Mühle", price: 5.5, image: "Zitronenpfeffer in der Mühle"),
-        Product(name: "Chilisalz in der Mühle", price: 4.5, image: "Chilisalz in der Mühle"),
-        Product(name: "Butterbrotsalz in der Mühle", price: 4.5, image: "Butterbrotsalz in der Mühle"),
-        Product(name: "Zitronen-Rosmarinsalz im Streuer", price: 3.5, image: "Zitronen-Rosmarinsalz im Streuer"),
-        Product(name: "Mediterranes Kräutersalz im Streuer", price: 3.5, image: "Mediterranes Kräutersalz im Streuer"),
-        Product(name: "Sesamsalz Gomasio", price: 3.5, image: "Sesamsalz Gomasio")
+        Product(name: "Pfirsichmarmelade", price: 4.0, imageFilename: "Pfirsichmarmelade"),
+        Product(name: "Aprikosenmarmelade", price: 4.0, imageFilename: "Aprikosenmarmelade"),
+        Product(name: "Traubengelee", price: 3.5, imageFilename: "Traubengelee"),
+        Product(name: "Bio-Orangenmarmelade", price: 3.5, imageFilename: "Bio-Orangenmarmelade"),
+        Product(name: "Bio Chili-Olivenöl", price: 8.0, imageFilename: "Bio Chili-Olivenöl"),
+        Product(name: "Bio-Bärlauch Rapsöl", price: 5.0, imageFilename: "Bio-Bärlauch Rapsöl"),
+        Product(name: "Bio Zitronen Rapsöl", price: 5.0, imageFilename: "Bio Zitronen Rapsöl"),
+        Product(name: "Himbeerbalsamico", price: 7.0, imageFilename: "Himbeerbalsamico"),
+        Product(name: "Ingwer-Zitronensirup", price: 5.0, imageFilename: "logo"),
+        Product(name: "Zitronenpfeffer in der Mühle", price: 5.5, imageFilename: "Zitronenpfeffer in der Mühle"),
+        Product(name: "Chilisalz in der Mühle", price: 4.5, imageFilename: "Chilisalz in der Mühle"),
+        Product(name: "Butterbrotsalz in der Mühle", price: 4.5, imageFilename: "Butterbrotsalz in der Mühle"),
+        Product(name: "Zitronen-Rosmarinsalz im Streuer", price: 3.5, imageFilename: "Zitronen-Rosmarinsalz im Streuer"),
+        Product(name: "Mediterranes Kräutersalz im Streuer", price: 3.5, imageFilename: "Mediterranes Kräutersalz im Streuer"),
+        Product(name: "Sesamsalz Gomasio", price: 3.5, imageFilename: "Sesamsalz Gomasio")
     ]
     @State private var cafeProducts: [Product] = [
-        Product(name: "Ein Stück Kuchen", price: 2.5, image: "Ein Stück Kuchen"),
-        Product(name: "Eisbecher 'Glückskekse'🍨 🍀🍪", price: 4.5, image: "Eisbecher 'Glückskekse'"),
-        Product(name: "Eisbecher 'Schokoglück'🍨 🍫🍀", price: 4.5, image: "Eisbecher 'Glückskekse'"),
-        Product(name: "Eisbecher 'Glückliche Kirsche'🍨 🍒", price: 4.5, image: "Eisbecher 'Glückliche Kirsche'"),
-        Product(name: "Eisbecher 'Gemischtes Glück'🍨 🍀", price: 4.0, image: "Eisbecher 'Glückskekse'"),
-        Product(name: "Becher Kaffee", price: 2.0, image: "Becher Kaffee"),
-        Product(name: "Heiße Schokolade", price: 2.5, image: "Heiße Schokolade"),
-        Product(name: "Tee", price: 2.0, image: "Tee"),
-        Product(name: "Sprudel", price: 1.5, image: "Sprudel"),
-        Product(name: "Bio-Limo (Flasche)", price: 2.5, image: "Bio-Limo (Flasche)"),
-        Product(name: "Zitrone-Ingwer-Limo (hausgemacht)", price: 2.0, image: "logo"),
-        Product(name: "Karotte küsst Ingwersaft (mit Apfelsaft)", price: 3.5, image: "logo")
-        
-        
+        Product(name: "Ein Stück Kuchen", price: 2.5, imageFilename: "Ein Stück Kuchen"),
+        Product(name: "Eisbecher 'Glückskekse'🍨 🍀🍪", price: 4.5, imageFilename: "Eisbecher 'Glückskekse'"),
+        Product(name: "Eisbecher 'Schokoglück'🍨 🍫🍀", price: 4.5, imageFilename: "Eisbecher 'Glückskekse'"),
+        Product(name: "Eisbecher 'Glückliche Kirsche'🍨 🍒", price: 4.5, imageFilename: "Eisbecher 'Glückliche Kirsche'"),
+        Product(name: "Eisbecher 'Gemischtes Glück'🍨 🍀", price: 4.0, imageFilename: "Eisbecher 'Glückskekse'"),
+        Product(name: "Becher Kaffee", price: 2.0, imageFilename: "Becher Kaffee"),
+        Product(name: "Heiße Schokolade", price: 2.5, imageFilename: "Heiße Schokolade"),
+        Product(name: "Tee", price: 2.0, imageFilename: "Tee"),
+        Product(name: "Sprudel", price: 1.5, imageFilename: "Sprudel"),
+        Product(name: "Bio-Limo (Flasche)", price: 2.5, imageFilename: "Bio-Limo (Flasche)"),
+        Product(name: "Zitrone-Ingwer-Limo (hausgemacht)", price: 2.0, imageFilename: "logo"),
+        Product(name: "Karotte küsst Ingwersaft (mit Apfelsaft)", price: 3.5, imageFilename: "logo")
     ]
     @State private var isAddingProduct = false
+    @State private var showAddProductSheet = false
+    @State private var newProductName = ""
+    @State private var newProductPrice = ""
+    @State private var newProductCategory = 0 // 0 = Sortiment, 1 = Café
+    @State private var newProductImage: UIImage? = nil
+    @State private var showImagePicker = false
+    @State private var customProducts: [Product] = []
+    @State private var customCafeProducts: [Product] = []
 
     var totalSum: Double {
-        let productTotals = zip(products, productCounts.prefix(products.count))
-            .map { $0.0.price * Double($0.1) }
-        let productTotal = productTotals.reduce(0, +)
+        let allProducts = products + customProducts + cafeProducts + customCafeProducts
+        return allProducts.reduce(0) { sum, product in
+            sum + (Double(productCounts[product.id] ?? 0) * product.price)
+        }
+    }
 
-        let cafeTotals = zip(cafeProducts, productCounts.suffix(cafeProducts.count))
-            .map { $0.0.price * Double($0.1) }
-        let cafeTotal = cafeTotals.reduce(0, +)
-
-        return productTotal + cafeTotal
+    // Hilfsfunktion, um productCounts an die Produktanzahl anzupassen
+    private func updateProductCounts() {
+        let allProducts = products + customProducts + cafeProducts + customCafeProducts
+        for product in allProducts {
+            if productCounts[product.id] == nil {
+                productCounts[product.id] = 0
+            }
+        }
+        // Entferne Zähler für gelöschte Produkte
+        let allIDs = Set(allProducts.map { $0.id })
+        productCounts = productCounts.filter { allIDs.contains($0.key) }
     }
 
     var body: some View {
@@ -115,14 +189,14 @@ struct ProductListScreen: View {
             VStack {
                 List {
                     Section(header: Text("Das Glückskekse-Sortiment").font(.headline)) {
-                        ForEach(Array(products.enumerated()), id: \.0) { (index, product) in
-                            productRow(for: product, countIndex: index)
+                        ForEach(products + customProducts) { product in
+                            productRow(for: product)
                         }
                     }
                     
                     Section(header: Text("Glückscafé 🍀☕️").font(.headline)) {
-                        ForEach(Array(cafeProducts.enumerated()), id: \.0) { (index, product) in
-                            productRow(for: product, countIndex: index + products.count)
+                        ForEach(cafeProducts + customCafeProducts) { product in
+                            productRow(for: product)
                         }
                     }
                 }
@@ -131,7 +205,7 @@ struct ProductListScreen: View {
                     .font(.title)
                     .padding()
                 
-                NavigationLink(destination: PaymentScreen(totalSum: totalSum)) {
+                NavigationLink(destination: PaymentScreen(totalSum: totalSum, path: $path)) {
                     Text("Weiter")
                         .padding()
                         .background(Color.green)
@@ -140,29 +214,128 @@ struct ProductListScreen: View {
                 }
             }
             .navigationTitle("Essen und Trinken")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        showAddProductSheet = true
+                    }) {
+                        Image(systemName: "plus")
+                    }
+                }
+            }
+            .onAppear {
+                // Custom-Produkte laden
+                if let data = UserDefaults.standard.data(forKey: "customProducts") {
+                    if let decoded = try? JSONDecoder().decode([Product].self, from: data) {
+                        customProducts = decoded
+                    }
+                }
+                if let data = UserDefaults.standard.data(forKey: "customCafeProducts") {
+                    if let decoded = try? JSONDecoder().decode([Product].self, from: data) {
+                        customCafeProducts = decoded
+                    }
+                }
+                updateProductCounts()
+            }
+            .sheet(isPresented: $showAddProductSheet) {
+                VStack(spacing: 20) {
+                    Text("Neues Produkt hinzufügen")
+                        .font(.headline)
+                    TextField("Produktname", text: $newProductName)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .padding(.horizontal)
+                    TextField("Preis in Euro", text: $newProductPrice)
+                        .keyboardType(.decimalPad)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .padding(.horizontal)
+                    Picker("Kategorie", selection: $newProductCategory) {
+                        Text("Glückskekse-Sortiment").tag(0)
+                        Text("Glückscafé").tag(1)
+                    }
+                    .pickerStyle(SegmentedPickerStyle())
+                    .padding(.horizontal)
+                    Button(action: {
+                        showImagePicker = true
+                    }) {
+                        if let image = newProductImage {
+                            Image(uiImage: image)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(height: 100)
+                        } else {
+                            Text("Bild auswählen")
+                                .foregroundColor(.blue)
+                        }
+                    }
+                    .sheet(isPresented: $showImagePicker) {
+                        ImagePicker(selectedImage: $newProductImage)
+                    }
+                    Button("Speichern") {
+                        guard let price = Double(newProductPrice), let image = newProductImage else { return }
+                        // Bild speichern
+                        let filename = UUID().uuidString + ".jpg"
+                        if let data = image.jpegData(compressionQuality: 0.8) {
+                            let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent(filename)
+                            try? data.write(to: url)
+                        }
+                        // Produktmodell anlegen
+                        let newProduct = Product(name: newProductName, price: price, imageFilename: filename)
+                        if newProductCategory == 0 {
+                            customProducts.append(newProduct)
+                            if let encoded = try? JSONEncoder().encode(customProducts) {
+                                UserDefaults.standard.set(encoded, forKey: "customProducts")
+                            }
+                        } else {
+                            customCafeProducts.append(newProduct)
+                            if let encoded = try? JSONEncoder().encode(customCafeProducts) {
+                                UserDefaults.standard.set(encoded, forKey: "customCafeProducts")
+                            }
+                        }
+                        updateProductCounts()
+                        // Formular zurücksetzen
+                        newProductName = ""
+                        newProductPrice = ""
+                        newProductImage = nil
+                        newProductCategory = 0
+                        showAddProductSheet = false
+                    }
+                    .disabled(newProductName.isEmpty || newProductPrice.isEmpty || newProductImage == nil)
+                    Button("Abbrechen") {
+                        showAddProductSheet = false
+                    }
+                }
+                .padding()
+            }
         }
     }
 
-    private func productRow(for product: Product, countIndex: Int) -> some View {
+    private func productRow(for product: Product) -> some View {
         HStack {
-            Image(product.image)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 110, height: 110)
-                .padding(.trailing, 10)
-
+            // Bildanzeige: erst Dokumentenverzeichnis prüfen, sonst Asset
+            let docURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent(product.imageFilename)
+            if FileManager.default.fileExists(atPath: docURL.path), let uiImage = UIImage(contentsOfFile: docURL.path) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 110, height: 110)
+                    .padding(.trailing, 10)
+            } else {
+                Image(product.imageFilename)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 110, height: 110)
+                    .padding(.trailing, 10)
+            }
             VStack(alignment: .leading) {
                 Text(product.name)
                     .font(.title3)
                 Text(String(format: "%.2f €", product.price))
                     .font(.subheadline)
             }
-
             Spacer()
-
             HStack(spacing: 10) {
                 Button(action: {
-                    decrementCount(for: countIndex)
+                    decrementCount(for: product.id)
                 }) {
                     Image(systemName: "minus.circle")
                         .resizable()
@@ -171,12 +344,11 @@ struct ProductListScreen: View {
                         .foregroundColor(.red)
                 }
                 .buttonStyle(BorderlessButtonStyle())
-
-                Text("\(productCounts[countIndex])")
+                let count = productCounts[product.id] ?? 0
+                Text("\(count)")
                     .frame(width: 40, alignment: .center)
-
                 Button(action: {
-                    incrementCount(for: countIndex)
+                    incrementCount(for: product.id)
                 }) {
                     Image(systemName: "plus.circle")
                         .resizable()
@@ -189,21 +361,21 @@ struct ProductListScreen: View {
         }
     }
 
-    private func incrementCount(for index: Int) {
-        guard index >= 0 && index < productCounts.count else { return }
-        productCounts[index] += 1
+    private func incrementCount(for id: UUID) {
+        productCounts[id, default: 0] += 1
     }
 
-    private func decrementCount(for index: Int) {
-        guard index >= 0 && index < productCounts.count else { return }
-        if productCounts[index] > 0 {
-            productCounts[index] -= 1
+    private func decrementCount(for id: UUID) {
+        if let current = productCounts[id], current > 0 {
+            productCounts[id] = current - 1
         }
     }
 }
 
 struct PaymentScreen: View {
     let totalSum: Double
+    @Binding var path: NavigationPath
+    
     @State private var selectedAmounts: [Double] = []
     @State private var showAlert = false // Neu: Warnung bei zu wenig Geld
     @State private var navigateToNextScreen = false // Neu: Steuerung für Navigation
@@ -321,7 +493,7 @@ struct PaymentScreen: View {
                     )
                 }
                 .background(
-                    NavigationLink("", destination: ChangeScreen(totalSum: totalSum, paidAmount: totalSelectedSum), isActive: $navigateToNextScreen)
+                    NavigationLink("", destination: ChangeScreen(totalSum: totalSum, paidAmount: totalSelectedSum, path: $path), isActive: $navigateToNextScreen)
                         .opacity(0) // Unsichtbarer NavigationLink
                 )
                 
@@ -336,6 +508,7 @@ struct PaymentScreen: View {
 struct ChangeScreen: View {
     let totalSum: Double
     let paidAmount: Double
+    @Binding var path: NavigationPath
     
     let euroAmounts: [Double] = [
         50.0, 20.0, 10.0, 5.0, 2.0, 1.0, 0.50, 0.20, 0.10
@@ -418,7 +591,9 @@ struct ChangeScreen: View {
                 
                 HStack {
                     
-                    NavigationLink(destination: ProductListScreen()) {
+                    Button(action: {
+                        path = NavigationPath() // Nächster Kunde: zurück zum Start
+                    }) {
                         Text("Nächster Kunde")
                             .padding()
                             .background(Color.green)
@@ -428,7 +603,9 @@ struct ChangeScreen: View {
                     
                     Spacer()
                     
-                    NavigationLink(destination: StartScreen()) {
+                    Button(action: {
+                        path = NavigationPath() // Beenden: zurück zum Start
+                    }) {
                         Text("Beenden")
                             .padding()
                             .background(Color.green)
@@ -443,6 +620,41 @@ struct ChangeScreen: View {
         }
     }
 
+}
+
+// MARK: - ImagePicker für SwiftUI
+import PhotosUI
+struct ImagePicker: UIViewControllerRepresentable {
+    @Environment(\.presentationMode) var presentationMode
+    var sourceType: UIImagePickerController.SourceType = .photoLibrary
+    @Binding var selectedImage: UIImage?
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.delegate = context.coordinator
+        picker.sourceType = sourceType
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
+        let parent: ImagePicker
+        init(_ parent: ImagePicker) { self.parent = parent }
+        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+            if let image = info[.originalImage] as? UIImage {
+                parent.selectedImage = image
+            }
+            parent.presentationMode.wrappedValue.dismiss()
+        }
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            parent.presentationMode.wrappedValue.dismiss()
+        }
+    }
 }
 
 struct ContentView_Previews: PreviewProvider {
