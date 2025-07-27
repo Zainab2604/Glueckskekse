@@ -127,7 +127,7 @@ struct ProductListScreen: View {
         Product(name: "Bio-Bärlauch Rapsöl", price: 5.0, imageFilename: "Bio-Bärlauch Rapsöl"),
         Product(name: "Bio Zitronen Rapsöl", price: 5.0, imageFilename: "Bio Zitronen Rapsöl"),
         Product(name: "Himbeerbalsamico", price: 7.0, imageFilename: "Himbeerbalsamico"),
-        Product(name: "Ingwer-Zitronensirup", price: 5.0, imageFilename: "logo"),
+        Product(name: "Ingwer-Zitronensirup", price: 5.0, imageFilename: "Ingwer-Zitronen-Sirup"),
         Product(name: "Zitronenpfeffer in der Mühle", price: 5.5, imageFilename: "Zitronenpfeffer in der Mühle"),
         Product(name: "Chilisalz in der Mühle", price: 4.5, imageFilename: "Chilisalz in der Mühle"),
         Product(name: "Butterbrotsalz in der Mühle", price: 4.5, imageFilename: "Butterbrotsalz in der Mühle"),
