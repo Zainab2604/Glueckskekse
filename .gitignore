@@ -15,4 +15,7 @@ build/
 .vscode/
 
 # SwiftPM
-/.swiftpm/xcode/package.xcworkspace/ 
+/.swiftpm/xcode/package.xcworkspace/
+
+# JetBrains IDEs
+.idea/ 
