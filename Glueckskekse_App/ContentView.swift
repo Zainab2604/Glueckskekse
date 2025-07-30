@@ -317,21 +317,24 @@ struct ProductListScreen: View {
                 Image(uiImage: uiImage)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 110, height: 110)
-                    .padding(.trailing, 10)
+                    .frame(width: 140, height: 140)
+                    .padding(.trailing, 15)
             } else {
                 Image(product.imageFilename)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 110, height: 110)
-                    .padding(.trailing, 10)
+                    .frame(width: 140, height: 140)
+                    .padding(.trailing, 15)
             }
-            VStack(alignment: .leading) {
+            VStack(alignment: .leading, spacing: 8) {
                 Text(product.name)
                     .font(.title3)
+                    .fontWeight(.medium)
                 Text(String(format: "%.2f €", product.price))
                     .font(.subheadline)
+                    .foregroundColor(.secondary)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             Spacer()
             HStack(spacing: 10) {
                 Button(action: {
@@ -347,6 +350,7 @@ struct ProductListScreen: View {
                 let count = productCounts[product.id] ?? 0
                 Text("\(count)")
                     .frame(width: 40, alignment: .center)
+                    .font(.headline)
                 Button(action: {
                     incrementCount(for: product.id)
                 }) {
@@ -359,6 +363,7 @@ struct ProductListScreen: View {
                 .buttonStyle(BorderlessButtonStyle())
             }
         }
+        .padding(.vertical, 8)
     }
 
     private func incrementCount(for id: UUID) {
