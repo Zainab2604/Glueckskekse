@@ -65,9 +65,18 @@ class ProductListViewModel: ObservableObject {
     }
 }
 
+// MARK: - OrderSessionViewModel für Kundensession
+class OrderSessionViewModel: ObservableObject {
+    @Published var productCounts: [UUID: Int] = [:]
+    func resetCounts() {
+        productCounts = [:]
+    }
+}
+
 struct ContentView: View {
     @State private var path = NavigationPath()
     @StateObject private var productListVM = ProductListViewModel()
+    @StateObject private var orderSession = OrderSessionViewModel()
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -77,11 +86,11 @@ struct ContentView: View {
                     case .start:
                         StartScreen(path: $path)
                     case .productList:
-                        ProductListScreen(path: $path)
+                        ProductListScreen(path: $path, orderSession: orderSession)
                     case .payment(let totalSum):
-                        PaymentScreen(totalSum: totalSum, path: $path)
+                        PaymentScreen(totalSum: totalSum, path: $path, orderSession: orderSession)
                     case .change(let totalSum, let paidAmount):
-                        ChangeScreen(totalSum: totalSum, paidAmount: paidAmount, path: $path)
+                        ChangeScreen(totalSum: totalSum, paidAmount: paidAmount, path: $path, orderSession: orderSession)
                     }
                 }
         }
@@ -117,7 +126,7 @@ struct StartScreen: View {
 
 struct ProductListScreen: View {
     @Binding var path: NavigationPath
-    @State private var productCounts: [UUID: Int] = [:]
+    @ObservedObject var orderSession: OrderSessionViewModel
     @State private var products: [Product] = [
         Product(name: "Pfirsichmarmelade", price: 4.0, imageFilename: "Pfirsichmarmelade"),
         Product(name: "Aprikosenmarmelade", price: 4.0, imageFilename: "Aprikosenmarmelade"),
@@ -162,7 +171,7 @@ struct ProductListScreen: View {
     var totalSum: Double {
         let allProducts = products + customProducts + cafeProducts + customCafeProducts
         return allProducts.reduce(0) { sum, product in
-            sum + (Double(productCounts[product.id] ?? 0) * product.price)
+            sum + (Double(orderSession.productCounts[product.id] ?? 0) * product.price)
         }
     }
 
@@ -170,13 +179,13 @@ struct ProductListScreen: View {
     private func updateProductCounts() {
         let allProducts = products + customProducts + cafeProducts + customCafeProducts
         for product in allProducts {
-            if productCounts[product.id] == nil {
-                productCounts[product.id] = 0
+            if orderSession.productCounts[product.id] == nil {
+                orderSession.productCounts[product.id] = 0
             }
         }
         // Entferne Zähler für gelöschte Produkte
         let allIDs = Set(allProducts.map { $0.id })
-        productCounts = productCounts.filter { allIDs.contains($0.key) }
+        orderSession.productCounts = orderSession.productCounts.filter { allIDs.contains($0.key) }
     }
 
     var body: some View {
@@ -205,7 +214,7 @@ struct ProductListScreen: View {
                     .font(.title)
                     .padding()
                 
-                NavigationLink(destination: PaymentScreen(totalSum: totalSum, path: $path)) {
+                NavigationLink(destination: PaymentScreen(totalSum: totalSum, path: $path, orderSession: orderSession)) {
                     Text("Weiter")
                         .padding()
                         .background(Color.green)
@@ -347,7 +356,7 @@ struct ProductListScreen: View {
                         .foregroundColor(.red)
                 }
                 .buttonStyle(BorderlessButtonStyle())
-                let count = productCounts[product.id] ?? 0
+                let count = orderSession.productCounts[product.id] ?? 0
                 Text("\(count)")
                     .frame(width: 40, alignment: .center)
                     .font(.headline)
@@ -367,12 +376,12 @@ struct ProductListScreen: View {
     }
 
     private func incrementCount(for id: UUID) {
-        productCounts[id, default: 0] += 1
+        orderSession.productCounts[id, default: 0] += 1
     }
 
     private func decrementCount(for id: UUID) {
-        if let current = productCounts[id], current > 0 {
-            productCounts[id] = current - 1
+        if let current = orderSession.productCounts[id], current > 0 {
+            orderSession.productCounts[id] = current - 1
         }
     }
 }
@@ -380,6 +389,7 @@ struct ProductListScreen: View {
 struct PaymentScreen: View {
     let totalSum: Double
     @Binding var path: NavigationPath
+    @ObservedObject var orderSession: OrderSessionViewModel
     
     @State private var selectedAmounts: [Double] = []
     @State private var showAlert = false // Neu: Warnung bei zu wenig Geld
@@ -498,7 +508,7 @@ struct PaymentScreen: View {
                     )
                 }
                 .background(
-                    NavigationLink("", destination: ChangeScreen(totalSum: totalSum, paidAmount: totalSelectedSum, path: $path), isActive: $navigateToNextScreen)
+                    NavigationLink("", destination: ChangeScreen(totalSum: totalSum, paidAmount: totalSelectedSum, path: $path, orderSession: orderSession), isActive: $navigateToNextScreen)
                         .opacity(0) // Unsichtbarer NavigationLink
                 )
                 
@@ -514,6 +524,8 @@ struct ChangeScreen: View {
     let totalSum: Double
     let paidAmount: Double
     @Binding var path: NavigationPath
+    @ObservedObject var orderSession: OrderSessionViewModel
+    @State private var shouldNavigateToProductList = false
     
     let euroAmounts: [Double] = [
         50.0, 20.0, 10.0, 5.0, 2.0, 1.0, 0.50, 0.20, 0.10
@@ -597,7 +609,8 @@ struct ChangeScreen: View {
                 HStack {
                     
                     Button(action: {
-                        path = NavigationPath() // Nächster Kunde: zurück zum Start
+                        orderSession.resetCounts()
+                        shouldNavigateToProductList = true
                     }) {
                         Text("Nächster Kunde")
                             .padding()
@@ -622,6 +635,15 @@ struct ChangeScreen: View {
                 
             }
             .navigationTitle("Wechselgeld")
+            
+            // NavigationLink für Produktliste
+            NavigationLink(
+                destination: ProductListScreen(path: $path, orderSession: orderSession),
+                isActive: $shouldNavigateToProductList
+            ) {
+                EmptyView()
+            }
+            .opacity(0)
         }
     }
 
