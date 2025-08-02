@@ -410,6 +410,14 @@ struct PaymentScreen: View {
         20.0: "note_20",
         50.0: "note_50"
     ]
+
+    var coinAmounts: [Double] {
+        euroAmounts.filter { $0 < 5.0 }
+    }
+
+    var noteAmounts: [Double] {
+        euroAmounts.filter { $0 >= 5.0 }
+    }
     
     var totalSelectedSum: Double {
         selectedAmounts.reduce(0, +)
@@ -424,7 +432,7 @@ struct PaymentScreen: View {
                     .font(.title2)
                     .padding()
                 
-                ScrollView(.horizontal) {
+                /*ScrollView(.horizontal) {
                     HStack {
                         ForEach(euroAmounts, id: \.self) { amount in
                             Button(action: {
@@ -445,8 +453,28 @@ struct PaymentScreen: View {
                             }
                         }
                     }
+                }*/
+
+                VStack(spacing: 20) {
+
+                    // Münzen
+                    ScrollView(.horizontal) {
+                        HStack {
+                            ForEach(coinAmounts, id: \.self) { amount in
+                                paymentButton(for: amount)
+                            }
+                        }
+                    }
+
+                    //Scheine
+                    ScrollView(.horizontal) {
+                        HStack {
+                            ForEach(noteAmounts, id: \.self) { amount in
+                                paymentButton(for: amount)
+                            }
+                        }
+                    }
                 }
-                
                 Spacer()
                 
                 HStack(alignment: .top, spacing: 10) {
@@ -515,6 +543,26 @@ struct PaymentScreen: View {
                 Spacer()
             }
             .navigationTitle("Bezahlen")
+        }
+    }
+
+    @ViewBuilder
+    private func paymentButton(for amount: Double) -> some View {
+        Button(action: {
+            selectedAmounts.append(amount)
+        }) {
+            if let imageName = euroImages[amount] {
+                Image(imageName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 90, height: 80)
+                    .padding()
+            } else {
+                Text(String(format: "%.2f €", amount))
+                    .padding()
+                    .background(Color.blue.opacity(0.2))
+                    .cornerRadius(10)
+            }
         }
     }
 }
