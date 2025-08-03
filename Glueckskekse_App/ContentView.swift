@@ -74,6 +74,7 @@ class OrderSessionViewModel: ObservableObject {
 }
 
 struct ContentView: View {
+    @AppStorage("isParent") var isParent: Bool = false
     @State private var path = NavigationPath()
     @StateObject private var productListVM = ProductListViewModel()
     @StateObject private var orderSession = OrderSessionViewModel()
@@ -99,50 +100,82 @@ struct ContentView: View {
 
 struct StartScreen: View {
     @Binding var path: NavigationPath
+
+    @AppStorage("isParent") var isParent: Bool = false
+    @State private var parentCodeInput = ""
+    let parentCode = "2839" //  Eltern-Code
+
     var body: some View {
         ZStack {
             Color.mint.edgesIgnoringSafeArea(.all)
             VStack(spacing: 20) {
-                Spacer()
+                
                 Image("logo")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 400, height: 400)
-                Button(action: {
-                    path.append(AppScreen.productList)
-                }) {
-                    Text("Start")
-                        .font(.title)
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
+
+
+                // Eltern-Login-Bereich
+                VStack(spacing: 10) {
+                    Text("Elternbereich").bold()
+                    SecureField("Eltern-Code", text: $parentCodeInput)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .frame(width: 200)
+                    Button("Einloggen") {
+                        if parentCodeInput == parentCode {
+                            isParent = true
+                            parentCodeInput = ""
+                        }
+                    }
                 }
-                Spacer()
+
+                if isParent {
+                    Text("👨‍👩‍👧 Elternrechte aktiv").foregroundColor(.green)
+                }
+                    
+                if isParent {
+                    Button("Elternrechte verlassen") {
+                        isParent = false
+                        parentCodeInput = ""
+                    }
+                    .foregroundColor(.red)
+                }
+
+
+            Button(action: {
+                path.append(AppScreen.productList)
+            }) {
+                Text("Start")
+                    .font(.title)
+                    .padding()
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
             }
+
+          
+            }
+
         }
+
+        
     }
 }
 
 struct ProductListScreen: View {
+
+    @AppStorage("isParent") var isParent: Bool = false
+
+
+    @State private var editingProduct: Product? = nil
+    @State private var showEditProductSheet = false
+
+
     @Binding var path: NavigationPath
     @ObservedObject var orderSession: OrderSessionViewModel
     @State private var products: [Product] = [
-        Product(name: "Pfirsichmarmelade", price: 4.0, imageFilename: "Pfirsichmarmelade"),
-        Product(name: "Aprikosenmarmelade", price: 4.0, imageFilename: "Aprikosenmarmelade"),
-        Product(name: "Traubengelee", price: 3.5, imageFilename: "Traubengelee"),
-        Product(name: "Bio-Orangenmarmelade", price: 3.5, imageFilename: "Bio-Orangenmarmelade"),
-        Product(name: "Bio Chili-Olivenöl", price: 8.0, imageFilename: "Bio Chili-Olivenöl"),
-        Product(name: "Bio-Bärlauch Rapsöl", price: 5.0, imageFilename: "Bio-Bärlauch Rapsöl"),
-        Product(name: "Bio Zitronen Rapsöl", price: 5.0, imageFilename: "Bio Zitronen Rapsöl"),
-        Product(name: "Himbeerbalsamico", price: 7.0, imageFilename: "Himbeerbalsamico"),
-        Product(name: "Ingwer-Zitronensirup", price: 5.0, imageFilename: "Ingwer-Zitronen-Sirup"),
-        Product(name: "Zitronenpfeffer in der Mühle", price: 5.5, imageFilename: "Zitronenpfeffer in der Mühle"),
-        Product(name: "Chilisalz in der Mühle", price: 4.5, imageFilename: "Chilisalz in der Mühle"),
-        Product(name: "Butterbrotsalz in der Mühle", price: 4.5, imageFilename: "Butterbrotsalz in der Mühle"),
-        Product(name: "Zitronen-Rosmarinsalz im Streuer", price: 3.5, imageFilename: "Zitronen-Rosmarinsalz im Streuer"),
-        Product(name: "Mediterranes Kräutersalz im Streuer", price: 3.5, imageFilename: "Mediterranes Kräutersalz im Streuer"),
-        Product(name: "Sesamsalz Gomasio", price: 3.5, imageFilename: "Sesamsalz Gomasio")
+        
     ]
     @State private var cafeProducts: [Product] = [
         Product(name: "Ein Stück Kuchen", price: 2.5, imageFilename: "Ein Stück Kuchen"),
@@ -224,12 +257,14 @@ struct ProductListScreen: View {
             }
             .navigationTitle("Essen und Trinken")
             .toolbar {
+                if isParent {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
                         showAddProductSheet = true
                     }) {
                         Image(systemName: "plus")
                     }
+                }
                 }
             }
             .onAppear {
@@ -316,7 +351,35 @@ struct ProductListScreen: View {
                 .padding()
             }
         }
+        
+        .sheet(isPresented: $showEditProductSheet) {
+            if let editingProductBinding = Binding($editingProduct) {
+                EditProductView(product: editingProductBinding) { updatedProduct in
+                    updateProduct(updatedProduct)
+                }
+            }
+        }
+
     }
+
+    private func updateProduct(_ updated: Product) {
+        if let index = products.firstIndex(where: { $0.id == updated.id }) {
+            products[index] = updated
+        } else if let index = customProducts.firstIndex(where: { $0.id == updated.id }) {
+            customProducts[index] = updated
+            if let encoded = try? JSONEncoder().encode(customProducts) {
+                UserDefaults.standard.set(encoded, forKey: "customProducts")
+            }
+        } else if let index = cafeProducts.firstIndex(where: { $0.id == updated.id }) {
+            cafeProducts[index] = updated
+        } else if let index = customCafeProducts.firstIndex(where: { $0.id == updated.id }) {
+            customCafeProducts[index] = updated
+            if let encoded = try? JSONEncoder().encode(customCafeProducts) {
+                UserDefaults.standard.set(encoded, forKey: "customCafeProducts")
+            }
+        }
+    }
+
 
     private func productRow(for product: Product) -> some View {
         HStack {
@@ -346,6 +409,19 @@ struct ProductListScreen: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             Spacer()
             HStack(spacing: 10) {
+
+                if isParent {
+                Button(action: {
+                    editingProduct = product
+                    showEditProductSheet = true
+                }) {
+                    Image(systemName: "pencil")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 25, height: 25)
+                        .foregroundColor(.blue)
+                    }
+                }
                 Button(action: {
                     decrementCount(for: product.id)
                 }) {
@@ -384,7 +460,42 @@ struct ProductListScreen: View {
             orderSession.productCounts[id] = current - 1
         }
     }
+
+    
 }
+
+struct EditProductView: View {
+    @Binding var product: Product
+    var onSave: (Product) -> Void
+    @Environment(\.presentationMode) var presentationMode
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("Produkt bearbeiten")
+                .font(.headline)
+
+            TextField("Produktname", text: $product.name)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+            TextField("Preis in Euro", value: $product.price, formatter: NumberFormatter())
+                .keyboardType(.decimalPad)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+
+            Button("Speichern") {
+                onSave(product)
+                presentationMode.wrappedValue.dismiss()
+            }
+
+            Button("Abbrechen") {
+                presentationMode.wrappedValue.dismiss()
+            }
+        }
+        .padding()
+    }
+}
+
+
+
+
 
 struct PaymentScreen: View {
     let totalSum: Double
