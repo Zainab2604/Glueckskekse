@@ -423,6 +423,20 @@ struct ProductListScreen: View {
                     }
                 }
                 Button(action: {
+                    incrementCount(for: product.id)
+                }) {
+                    Image(systemName: "plus.circle")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 60, height: 60)
+                        .foregroundColor(.green)
+                }
+                .buttonStyle(BorderlessButtonStyle())
+                let count = orderSession.productCounts[product.id] ?? 0
+                Text("\(count)")
+                    .frame(width: 60, alignment: .center)
+                    .font(.headline)
+                Button(action: {
                     decrementCount(for: product.id)
                 }) {
                     Image(systemName: "minus.circle")
@@ -430,20 +444,6 @@ struct ProductListScreen: View {
                         .scaledToFit()
                         .frame(width: 30, height: 30)
                         .foregroundColor(.red)
-                }
-                .buttonStyle(BorderlessButtonStyle())
-                let count = orderSession.productCounts[product.id] ?? 0
-                Text("\(count)")
-                    .frame(width: 40, alignment: .center)
-                    .font(.headline)
-                Button(action: {
-                    incrementCount(for: product.id)
-                }) {
-                    Image(systemName: "plus.circle")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 30, height: 30)
-                        .foregroundColor(.green)
                 }
                 .buttonStyle(BorderlessButtonStyle())
             }
