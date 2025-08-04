@@ -118,7 +118,7 @@ struct StartScreen: View {
 
                 // Eltern-Login-Bereich
                 VStack(spacing: 10) {
-                    Text("Elternbereich").bold()
+                    Text("Elternbereich").bold().foregroundColor(.black)
                     SecureField("Eltern-Code", text: $parentCodeInput)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .frame(width: 200)
@@ -146,11 +146,13 @@ struct StartScreen: View {
             Button(action: {
                 path.append(AppScreen.productList)
             }) {
-                Text("Start")
-                    .font(.title)
+                Text("Start 🛍️")
+                    .font(.largeTitle)
+                    .bold()
                     .padding()
+                    .frame(width: 170, height: 100)
                     .background(Color.blue)
-                    .foregroundColor(.white)
+                    .foregroundColor(.black)
                     .cornerRadius(10)
             }
 
@@ -244,14 +246,18 @@ struct ProductListScreen: View {
                 }
                 
                 Text("Gesamtsumme: \(String(format: "%.2f", totalSum)) €")
-                    .font(.title)
-                    .padding()
+                    .font(.largeTitle)
+                    .bold()
+                    .foregroundColor(.black)
+                
                 
                 NavigationLink(destination: PaymentScreen(totalSum: totalSum, path: $path, orderSession: orderSession)) {
                     Text("Weiter")
                         .padding()
+                        .font(.largeTitle)
+                        .bold()
                         .background(Color.green)
-                        .foregroundColor(.white)
+                        .foregroundColor(.black)
                         .cornerRadius(10)
                 }
             }
@@ -389,21 +395,21 @@ struct ProductListScreen: View {
                 Image(uiImage: uiImage)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 140, height: 140)
+                    .frame(width: 200, height: 200)
                     .padding(.trailing, 15)
             } else {
                 Image(product.imageFilename)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 140, height: 140)
+                    .frame(width: 200, height: 200)
                     .padding(.trailing, 15)
             }
             VStack(alignment: .leading, spacing: 8) {
                 Text(product.name)
-                    .font(.title3)
+                    .font(.largeTitle)
                     .fontWeight(.medium)
                 Text(String(format: "%.2f €", product.price))
-                    .font(.subheadline)
+                    .font(.title)
                     .foregroundColor(.secondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -503,8 +509,8 @@ struct PaymentScreen: View {
     @ObservedObject var orderSession: OrderSessionViewModel
     
     @State private var selectedAmounts: [Double] = []
-    @State private var showAlert = false // Neu: Warnung bei zu wenig Geld
-    @State private var navigateToNextScreen = false // Neu: Steuerung für Navigation
+    @State private var showAlert = false // Warnung bei zu wenig Geld
+    @State private var navigateToNextScreen = false // Steuerung für Navigation
     
     let euroAmounts: [Double] = [
         0.10, 0.20, 0.50, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0
@@ -540,7 +546,8 @@ struct PaymentScreen: View {
             
             VStack {
                 Text("Wie viel hat der Kunde gezahlt?")
-                    .font(.title2)
+                    .font(.largeTitle)
+                    .foregroundColor(.black)
                     .padding()
                 
                 /*ScrollView(.horizontal) {
@@ -586,23 +593,26 @@ struct PaymentScreen: View {
                         }
                     }
                 }
-                Spacer()
                 
-                HStack(alignment: .top, spacing: 10) {
+                
+                HStack {
                     VStack(alignment: .center) {
                         Text("=")
-                            .font(.headline)
+                            .font(.largeTitle)
+                            .foregroundColor(.black)
                         
                         Text("\(String(format: "%.2f", totalSelectedSum)) €")
-                            .font(.title)
+                            .font(.largeTitle)
+                            .foregroundColor(.black)
                     }
                 }
                 .padding()
                 
                 VStack(alignment: .center) {
                     Text("Ausgewählt:")
-                        .font(.headline)
-                        .padding(.bottom, 5)
+                        .font(.largeTitle)
+                        .foregroundColor(.black)
+                        
                     
                     ScrollView(.horizontal) {
                         HStack {
@@ -614,8 +624,8 @@ struct PaymentScreen: View {
                                         Image(imageName)
                                             .resizable()
                                             .scaledToFit()
-                                            .frame(width: 100, height: 70)
-                                            .padding(4)
+                                            .frame(width: 150, height: 70)
+                                        
                                     }
                                 }
                             }
@@ -625,7 +635,7 @@ struct PaymentScreen: View {
                 .frame(maxWidth: .infinity)
                 .padding(.bottom, 20)
                 
-                // EINZIGER "Weiter"-Button
+                // "Weiter"-Button
                 Button(action: {
                     if totalSelectedSum < totalSum {
                         showAlert = true  // Warnung anzeigen
@@ -635,8 +645,10 @@ struct PaymentScreen: View {
                 }) {
                     Text("Weiter")
                         .padding()
+                        .font(.largeTitle)
+                        .bold()
                         .background(Color.green)
-                        .foregroundColor(.white)
+                        .foregroundColor(.black)
                         .cornerRadius(10)
                 }
                 .alert(isPresented: $showAlert) {
@@ -666,11 +678,11 @@ struct PaymentScreen: View {
                 Image(imageName)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 90, height: 80)
-                    .padding()
+                    .frame(width: 150, height: 140)
+                    
             } else {
                 Text(String(format: "%.2f €", amount))
-                    .padding()
+                    
                     .background(Color.blue.opacity(0.2))
                     .cornerRadius(10)
             }
@@ -730,7 +742,8 @@ struct ChangeScreen: View {
                 .edgesIgnoringSafeArea(.all)
             VStack {
                 Text("Du musst \(String(format: "%.2f", change)) € zurückgeben")
-                    .font(.title)
+                    .font(.largeTitle)
+                    .foregroundColor(.black)
                     .padding()
                 
                 ScrollView {
@@ -752,9 +765,10 @@ struct ChangeScreen: View {
                                 
                                 // Text
                                 Text("\(detail.count) × \(String(format: "%.2f", detail.amount)) €")
-                                    .font(.headline)
-                                    .frame(width:100, height: 100)
+                                    .font(.title)
+                                    .frame(width:150, height: 150)
                                     .frame(maxWidth: .infinity, alignment: .leading)
+                                    .foregroundColor(.black)
                             }
                             .padding(.horizontal)
                             .frame(maxWidth: .infinity, alignment: .center)  // Gesamte HStack zentrieren
@@ -774,7 +788,8 @@ struct ChangeScreen: View {
                         Text("Nächster Kunde")
                             .padding()
                             .background(Color.green)
-                            .foregroundColor(.white)
+                            .foregroundColor(.black)
+                            .bold()
                             .cornerRadius(10)
                     }
                     
@@ -786,7 +801,8 @@ struct ChangeScreen: View {
                         Text("Beenden")
                             .padding()
                             .background(Color.green)
-                            .foregroundColor(.white)
+                            .foregroundColor(.black)
+                            .bold()
                             .cornerRadius(10)
                     }
                 }
