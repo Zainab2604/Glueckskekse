@@ -233,9 +233,16 @@ struct ProductListScreen: View {
             VStack {
                 List {
                     Section(header: Text("Das Glückskekse-Sortiment").font(.headline)) {
-                        ForEach(products + customProducts) { product in
+                        ForEach(Array((products + customProducts).enumerated()), id: \.element.id) { index, product in
                             productRow(for: product)
                         }
+                        .onMove { indices, newOffset in
+                            if isParent {
+                                moveProducts(in: &products, custom: &customProducts, indices: indices, newOffset: newOffset)
+                            }
+                        }
+                        .moveDisabled(!isParent)
+
                     }
                     
                     Section(header: Text("Glückscafé 🍀☕️").font(.headline)) {
@@ -244,6 +251,7 @@ struct ProductListScreen: View {
                         }
                     }
                 }
+                .environment(\.editMode, .constant(.inactive))
                 
                 Text("Gesamtsumme: \(String(format: "%.2f", totalSum)) €")
                     .font(.largeTitle)
@@ -466,6 +474,22 @@ struct ProductListScreen: View {
             orderSession.productCounts[id] = current - 1
         }
     }
+
+    private func moveProducts(in original: inout [Product], custom: inout [Product], indices: IndexSet, newOffset: Int) {
+        // Zusammenfügen + verschieben
+        var combined = original + custom
+        combined.move(fromOffsets: indices, toOffset: newOffset)
+
+        // Neu aufteilen
+        original = Array(combined.prefix(original.count))
+        custom = Array(combined.dropFirst(original.count))
+
+        // Custom speichern
+        if let encoded = try? JSONEncoder().encode(custom) {
+            UserDefaults.standard.set(encoded, forKey: "customProducts")
+        }
+    }
+
 
     
 }
