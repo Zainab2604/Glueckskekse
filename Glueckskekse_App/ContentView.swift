@@ -171,7 +171,6 @@ struct ProductListScreen: View {
 
 
     @State private var editingProduct: Product? = nil
-    @State private var showEditProductSheet = false
     @State private var showDeleteAlert = false
     @State private var productToDelete: Product? = nil
 
@@ -368,13 +367,7 @@ struct ProductListScreen: View {
             }
         }
         
-        .sheet(isPresented: $showEditProductSheet) {
-            if let editingProductBinding = Binding($editingProduct) {
-                EditProductView(product: editingProductBinding) { updatedProduct in
-                    updateProduct(updatedProduct)
-                }
-            }
-        }
+
         .alert("Produkt löschen", isPresented: $showDeleteAlert) {
             Button("Abbrechen", role: .cancel) { }
             Button("Löschen", role: .destructive) {
@@ -440,16 +433,18 @@ struct ProductListScreen: View {
             HStack(spacing: 10) {
 
                 if isParent {
-                Button(action: {
-                    editingProduct = product
-                    showEditProductSheet = true
+                NavigationLink(destination: EditProductView(
+                    product: product
+                ) { updatedProduct in
+                    updateProduct(updatedProduct)
                 }) {
                     Image(systemName: "pencil")
                         .resizable()
                         .scaledToFit()
                         .frame(width: 25, height: 25)
                         .foregroundColor(.blue)
-                    }
+                }
+                .buttonStyle(PlainButtonStyle())
                 }
                 Button(action: {
                     incrementCount(for: product.id)
@@ -550,33 +545,43 @@ struct ProductListScreen: View {
 }
 
 struct EditProductView: View {
-    @Binding var product: Product
+    let originalProduct: Product
     var onSave: (Product) -> Void
     @Environment(\.presentationMode) var presentationMode
-    @State private var priceString: String = ""
+    @State private var productName: String
+    @State private var productPrice: String
+
+    init(product: Product, onSave: @escaping (Product) -> Void) {
+        self.originalProduct = product
+        self.onSave = onSave
+        // Werte direkt beim Initialisieren setzen
+        self._productName = State(initialValue: product.name)
+        self._productPrice = State(initialValue: String(format: "%.2f", product.price))
+    }
 
     var body: some View {
         VStack(spacing: 20) {
             Text("Produkt bearbeiten")
                 .font(.headline)
 
-            TextField("Produktname", text: $product.name)
+            TextField("Produktname", text: $productName)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
             
-            TextField("Preis in Euro", text: $priceString)
+            TextField("Preis in Euro", text: $productPrice)
                 .keyboardType(.decimalPad)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
-                .onAppear {
-                    // Preis beim Laden korrekt anzeigen
-                    priceString = String(format: "%.2f", product.price)
-                }
 
             Button("Speichern") {
-                // Preis aus String konvertieren
-                if let newPrice = Double(priceString.replacingOccurrences(of: ",", with: ".")) {
-                    product.price = newPrice
+                // Neues Produkt mit aktualisierten Werten erstellen
+                if let newPrice = Double(productPrice.replacingOccurrences(of: ",", with: ".")) {
+                    let updatedProduct = Product(
+                        id: originalProduct.id,
+                        name: productName,
+                        price: newPrice,
+                        imageFilename: originalProduct.imageFilename
+                    )
+                    onSave(updatedProduct)
                 }
-                onSave(product)
                 presentationMode.wrappedValue.dismiss()
             }
 
@@ -585,6 +590,8 @@ struct EditProductView: View {
             }
         }
         .padding()
+        .navigationTitle("Produkt bearbeiten")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
