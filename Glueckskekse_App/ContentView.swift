@@ -172,6 +172,8 @@ struct ProductListScreen: View {
 
     @State private var editingProduct: Product? = nil
     @State private var showEditProductSheet = false
+    @State private var showDeleteAlert = false
+    @State private var productToDelete: Product? = nil
 
 
     @Binding var path: NavigationPath
@@ -373,6 +375,19 @@ struct ProductListScreen: View {
                 }
             }
         }
+        .alert("Produkt löschen", isPresented: $showDeleteAlert) {
+            Button("Abbrechen", role: .cancel) { }
+            Button("Löschen", role: .destructive) {
+                if let product = productToDelete {
+                    deleteProduct(product)
+                    productToDelete = nil
+                }
+            }
+        } message: {
+            if let product = productToDelete {
+                Text("Möchten Sie das Produkt \"\(product.name)\" wirklich löschen?")
+            }
+        }
 
     }
 
@@ -463,6 +478,16 @@ struct ProductListScreen: View {
             }
         }
         .padding(.vertical, 8)
+        .swipeActions(edge: .leading, allowsFullSwipe: false) {
+            if isParent {
+                Button(role: .destructive) {
+                    productToDelete = product
+                    showDeleteAlert = true
+                } label: {
+                    Label("Löschen", systemImage: "trash")
+                }
+            }
+        }
     }
 
     private func incrementCount(for id: UUID) {
@@ -487,6 +512,36 @@ struct ProductListScreen: View {
         // Custom speichern
         if let encoded = try? JSONEncoder().encode(custom) {
             UserDefaults.standard.set(encoded, forKey: "customProducts")
+        }
+    }
+    
+    private func deleteProduct(_ product: Product) {
+        // Produkt aus der entsprechenden Liste entfernen
+        if let index = products.firstIndex(where: { $0.id == product.id }) {
+            products.remove(at: index)
+        } else if let index = customProducts.firstIndex(where: { $0.id == product.id }) {
+            customProducts.remove(at: index)
+            if let encoded = try? JSONEncoder().encode(customProducts) {
+                UserDefaults.standard.set(encoded, forKey: "customProducts")
+            }
+        } else if let index = cafeProducts.firstIndex(where: { $0.id == product.id }) {
+            cafeProducts.remove(at: index)
+        } else if let index = customCafeProducts.firstIndex(where: { $0.id == product.id }) {
+            customCafeProducts.remove(at: index)
+            if let encoded = try? JSONEncoder().encode(customCafeProducts) {
+                UserDefaults.standard.set(encoded, forKey: "customCafeProducts")
+            }
+        }
+        
+        // Zähler für das gelöschte Produkt entfernen
+        orderSession.productCounts.removeValue(forKey: product.id)
+        
+        // Bilddatei löschen, falls es eine benutzerdefinierte Datei ist
+        let filename = product.imageFilename
+        if !filename.isEmpty {
+            let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+            let imageURL = documentsURL.appendingPathComponent(filename)
+            try? FileManager.default.removeItem(at: imageURL)
         }
     }
 
