@@ -553,6 +553,7 @@ struct EditProductView: View {
     @Binding var product: Product
     var onSave: (Product) -> Void
     @Environment(\.presentationMode) var presentationMode
+    @State private var priceString: String = ""
 
     var body: some View {
         VStack(spacing: 20) {
@@ -561,11 +562,20 @@ struct EditProductView: View {
 
             TextField("Produktname", text: $product.name)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
-            TextField("Preis in Euro", value: $product.price, formatter: NumberFormatter())
+            
+            TextField("Preis in Euro", text: $priceString)
                 .keyboardType(.decimalPad)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
+                .onAppear {
+                    // Preis beim Laden korrekt anzeigen
+                    priceString = String(format: "%.2f", product.price)
+                }
 
             Button("Speichern") {
+                // Preis aus String konvertieren
+                if let newPrice = Double(priceString.replacingOccurrences(of: ",", with: ".")) {
+                    product.price = newPrice
+                }
                 onSave(product)
                 presentationMode.wrappedValue.dismiss()
             }
