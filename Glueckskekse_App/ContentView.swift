@@ -892,6 +892,7 @@ struct ChangeScreen: View {
                     Spacer()
                     
                     Button(action: {
+                        orderSession.resetCounts() // Zähler zurücksetzen
                         path = NavigationPath() // Beenden: zurück zum Start
                     }) {
                         Text("Beenden")
