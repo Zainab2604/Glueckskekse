@@ -32,7 +32,7 @@ struct StartScreen: View {
                 }
 
                 if isParent {
-                    Text("👨‍👩‍👧 Elternrechte aktiv").foregroundColor(.green)
+                    Text("👨‍👩‍👧 Elternrechte aktiv").foregroundColor(.black)
                 }
                     
                 if isParent {

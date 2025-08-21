@@ -11,18 +11,18 @@ struct ProductListScreen: View {
     @ObservedObject var orderSession: OrderSessionViewModel
     @State private var products: [Product] = []
     @State private var cafeProducts: [Product] = [
-        Product(name: "Ein Stück Kuchen", price: 2.5, imageFilename: "Ein Stück Kuchen"),
-        Product(name: "Eisbecher 'Glückskekse'🍨 🍀🍪", price: 4.5, imageFilename: "Eisbecher 'Glückskekse'"),
-        Product(name: "Eisbecher 'Schokoglück'🍨 🍫🍀", price: 4.5, imageFilename: "Eisbecher 'Glückskekse'"),
-        Product(name: "Eisbecher 'Glückliche Kirsche'🍨 🍒", price: 4.5, imageFilename: "Eisbecher 'Glückliche Kirsche'"),
-        Product(name: "Eisbecher 'Gemischtes Glück'🍨 🍀", price: 4.0, imageFilename: "Eisbecher 'Glückskekse'"),
-        Product(name: "Becher Kaffee", price: 2.0, imageFilename: "Becher Kaffee"),
-        Product(name: "Heiße Schokolade", price: 2.5, imageFilename: "Heiße Schokolade"),
-        Product(name: "Tee", price: 2.0, imageFilename: "Tee"),
-        Product(name: "Sprudel", price: 1.5, imageFilename: "Sprudel"),
-        Product(name: "Bio-Limo (Flasche)", price: 2.5, imageFilename: "Bio-Limo (Flasche)"),
-        Product(name: "Zitrone-Ingwer-Limo (hausgemacht)", price: 2.0, imageFilename: "logo"),
-        Product(name: "Karotte küsst Ingwersaft (mit Apfelsaft)", price: 3.5, imageFilename: "logo")
+//        Product(name: "Ein Stück Kuchen", price: 2.5, imageFilename: "Ein Stück Kuchen"),
+//        Product(name: "Eisbecher 'Glückskekse'🍨 🍀🍪", price: 4.5, imageFilename: "Eisbecher 'Glückskekse'"),
+//        Product(name: "Eisbecher 'Schokoglück'🍨 🍫🍀", price: 4.5, imageFilename: "Eisbecher 'Glückskekse'"),
+//        Product(name: "Eisbecher 'Glückliche Kirsche'🍨 🍒", price: 4.5, imageFilename: "Eisbecher 'Glückliche Kirsche'"),
+//        Product(name: "Eisbecher 'Gemischtes Glück'🍨 🍀", price: 4.0, imageFilename: "Eisbecher 'Glückskekse'"),
+//        Product(name: "Becher Kaffee", price: 2.0, imageFilename: "Becher Kaffee"),
+//        Product(name: "Heiße Schokolade", price: 2.5, imageFilename: "Heiße Schokolade"),
+//        Product(name: "Tee", price: 2.0, imageFilename: "Tee"),
+//        Product(name: "Sprudel", price: 1.5, imageFilename: "Sprudel"),
+//        Product(name: "Bio-Limo (Flasche)", price: 2.5, imageFilename: "Bio-Limo (Flasche)"),
+//        Product(name: "Zitrone-Ingwer-Limo (hausgemacht)", price: 2.0, imageFilename: "logo"),
+//        Product(name: "Karotte küsst Ingwersaft (mit Apfelsaft)", price: 3.5, imageFilename: "logo")
     ]
     @State private var isAddingProduct = false
     @State private var showAddProductSheet = false
