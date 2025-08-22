@@ -14,11 +14,13 @@ struct Product: Identifiable, Codable {
     var name: String
     var price: Double
     var imageFilename: String // Dateiname des gespeicherten Bildes
+    var isActive: Bool // Status ob das Produkt aktiv ist
     
-    init(id: UUID = UUID(), name: String, price: Double, imageFilename: String) {
+    init(id: UUID = UUID(), name: String, price: Double, imageFilename: String, isActive: Bool = true) {
         self.id = id
         self.name = name
         self.price = price
         self.imageFilename = imageFilename
+        self.isActive = isActive
     }
 }

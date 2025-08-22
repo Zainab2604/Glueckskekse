@@ -19,9 +19,10 @@ struct EditProductView: View {
     }
 
     var body: some View {
-        VStack(spacing: 20) {
-            Text("Produkt bearbeiten")
-                .font(.headline)
+        ScrollView {
+            VStack(spacing: 20) {
+              //  Text("Produkt bearbeiten")
+              //      .font(.headline)
 
             // Aktuelles Bild anzeigen
             VStack {
@@ -116,6 +117,7 @@ struct EditProductView: View {
             }
         }
         .padding()
+        }
         .navigationTitle("Produkt bearbeiten")
         .navigationBarTitleDisplayMode(.inline)
     }

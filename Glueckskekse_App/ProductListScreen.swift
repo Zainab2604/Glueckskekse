@@ -3,9 +3,13 @@ import SwiftUI
 struct ProductListScreen: View {
     @AppStorage("isParent") var isParent: Bool = false
 
-    @State private var editingProduct: Product? = nil
+    //@State private var editingProduct: Product? = nil
     @State private var showDeleteAlert = false
     @State private var productToDelete: Product? = nil
+    @State private var showDeactivateAlert = false
+    @State private var productToDeactivate: Product? = nil
+    @State private var showDeactivatedProducts = false // Für einklappbare Liste
+    @State private var editingProduct: Product? = nil
 
     @Binding var path: NavigationPath
     @ObservedObject var orderSession: OrderSessionViewModel
@@ -36,7 +40,7 @@ struct ProductListScreen: View {
 
     var totalSum: Double {
         let allProducts = products + customProducts + cafeProducts + customCafeProducts
-        return allProducts.reduce(0) { sum, product in
+        return allProducts.filter { $0.isActive }.reduce(0) { sum, product in
             sum + (Double(orderSession.productCounts[product.id] ?? 0) * product.price)
         }
     }
@@ -63,7 +67,7 @@ struct ProductListScreen: View {
             VStack {
                 List {
                     Section(header: Text("Das Glückskekse-Sortiment").font(.headline)) {
-                        ForEach(Array((products + customProducts).enumerated()), id: \.element.id) { index, product in
+                        ForEach(Array((products + customProducts).filter { $0.isActive }.enumerated()), id: \.element.id) { index, product in
                             productRow(for: product)
                         }
                         .onMove { indices, newOffset in
@@ -75,8 +79,40 @@ struct ProductListScreen: View {
                     }
                     
                     Section(header: Text("Glückscafé 🍀☕️").font(.headline)) {
-                        ForEach(cafeProducts + customCafeProducts) { product in
+                        ForEach((cafeProducts + customCafeProducts).filter { $0.isActive }) { product in
                             productRow(for: product)
+                        }
+                    }
+                    
+                    // Deaktivierte Produkte (nur im Elternmodus sichtbar)
+                    if isParent {
+                        Section(header: 
+                            HStack {
+                                Text("Deaktivierte Produkte")
+                                    .font(.headline)
+                                Spacer()
+                                Button(action: {
+                                    withAnimation {
+                                        showDeactivatedProducts.toggle()
+                                    }
+                                }) {
+                                    Image(systemName: showDeactivatedProducts ? "chevron.up" : "chevron.down")
+                                        .foregroundColor(.blue)
+                                }
+                            }
+                        ) {
+                            if showDeactivatedProducts {
+                                let deactivatedProducts = (products + customProducts + cafeProducts + customCafeProducts).filter { !$0.isActive }
+                                if deactivatedProducts.isEmpty {
+                                    Text("Keine deaktivierten Produkte")
+                                        .foregroundColor(.secondary)
+                                        .italic()
+                                } else {
+                                    ForEach(deactivatedProducts) { product in
+                                        deactivatedProductRow(for: product)
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -206,6 +242,26 @@ struct ProductListScreen: View {
                 Text("Möchten Sie das Produkt \"\(product.name)\" wirklich löschen?")
             }
         }
+        .alert("Produkt deaktivieren", isPresented: $showDeactivateAlert) {
+            Button("Abbrechen", role: .cancel) { }
+            Button("Deaktivieren", role: .destructive) {
+                if let product = productToDeactivate {
+                    deactivateProduct(product)
+                    productToDeactivate = nil
+                }
+            }
+        } message: {
+            if let product = productToDeactivate {
+                Text("Möchten Sie das Produkt \"\(product.name)\" wirklich deaktivieren?")
+            }
+        }
+        .fullScreenCover(item: $editingProduct) { product in
+            NavigationView {
+                EditProductView(product: product) { updatedProduct in
+                    updateProduct(updatedProduct)
+                }
+            }
+        }
     }
 
     private func updateProduct(_ updated: Product) {
@@ -224,6 +280,18 @@ struct ProductListScreen: View {
                 UserDefaults.standard.set(encoded, forKey: "customCafeProducts")
             }
         }
+    }
+
+    private func toggleProductStatus(_ product: Product) {
+        var updatedProduct = product
+        updatedProduct.isActive.toggle()
+        updateProduct(updatedProduct)
+    }
+    
+    private func deactivateProduct(_ product: Product) {
+        var updatedProduct = product
+        updatedProduct.isActive = false
+        updateProduct(updatedProduct)
     }
 
     private func productRow(for product: Product) -> some View {
@@ -255,16 +323,31 @@ struct ProductListScreen: View {
             Spacer()
             HStack(spacing: 10) {
                 if isParent {
-                    NavigationLink(destination: EditProductView(
-                        product: product
-                    ) { updatedProduct in
-                        updateProduct(updatedProduct)
+                    Button(action: {
+                        editingProduct = product
                     }) {
                         Image(systemName: "pencil")
                             .resizable()
                             .scaledToFit()
                             .frame(width: 25, height: 25)
                             .foregroundColor(.blue)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    
+                    // Deaktivieren Button
+                    Button(action: {
+                        if product.isActive {
+                            productToDeactivate = product
+                            showDeactivateAlert = true
+                        } else {
+                            toggleProductStatus(product)
+                        }
+                    }) {
+                        Image(systemName: product.isActive ? "eye.slash.circle" : "eye.circle")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 35, height: 35)
+                            .foregroundColor(product.isActive ? .orange : .green)
                     }
                     .buttonStyle(PlainButtonStyle())
                 }
@@ -305,6 +388,53 @@ struct ProductListScreen: View {
                 }
             }
         }
+    }
+
+    private func deactivatedProductRow(for product: Product) -> some View {
+        HStack {
+            // Bildanzeige: erst Dokumentenverzeichnis prüfen, sonst Asset
+            let docURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent(product.imageFilename)
+            if FileManager.default.fileExists(atPath: docURL.path), let uiImage = UIImage(contentsOfFile: docURL.path) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 200, height: 200)
+                    .padding(.trailing, 15)
+                    .opacity(0.5)
+            } else {
+                Image(product.imageFilename)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 200, height: 200)
+                    .padding(.trailing, 15)
+                    .opacity(0.5)
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                Text(product.name)
+                    .font(.largeTitle)
+                    .fontWeight(.medium)
+                    .foregroundColor(.secondary)
+                Text(String(format: "%.2f €", product.price))
+                    .font(.title)
+                    .foregroundColor(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Spacer()
+            
+            // Aktivieren Button
+            Button(action: {
+                toggleProductStatus(product)
+            }) {
+                Image(systemName: "eye.circle")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 30, height: 30)
+                    .foregroundColor(.green)
+            }
+            .buttonStyle(PlainButtonStyle())
+        }
+        .padding(.vertical, 8)
+        .opacity(0.7)
     }
 
     private func incrementCount(for id: UUID) {
