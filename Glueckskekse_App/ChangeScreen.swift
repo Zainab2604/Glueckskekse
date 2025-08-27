@@ -49,6 +49,8 @@ struct ChangeScreen: View {
         
         if cents == 0 {
             return "Du musst \(euros) € zurückgeben"
+        } else if euros == 0 {
+            return "Du musst \(cents) Cent zurückgeben"
         } else {
             return "Du musst \(euros) € und \(cents) Cent zurückgeben"
         }
