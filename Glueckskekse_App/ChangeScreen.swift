@@ -42,6 +42,17 @@ struct ChangeScreen: View {
         
         return details
     }
+    
+    private func formatChangeText(_ amount: Double) -> String {
+        let euros = Int(amount)
+        let cents = Int(round((amount - Double(euros)) * 100))
+        
+        if cents == 0 {
+            return "Du musst \(euros) € zurückgeben"
+        } else {
+            return "Du musst \(euros) € und \(cents) Cent zurückgeben"
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -49,7 +60,7 @@ struct ChangeScreen: View {
             Color.mint
                 .edgesIgnoringSafeArea(.all)
             VStack {
-                Text("Du musst \(String(format: "%.2f", change)) € zurückgeben")
+                Text(formatChangeText(change))
                     .font(.largeTitle)
                     .foregroundColor(.black)
                     .padding()
