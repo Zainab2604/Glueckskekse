@@ -148,13 +148,19 @@ struct ProductListScreen: View {
             .onAppear {
                 // Custom-Produkte laden
                 if let data = UserDefaults.standard.data(forKey: "customProducts") {
-                    if let decoded = try? JSONDecoder().decode([Product].self, from: data) {
+                    do {
+                        let decoded = try JSONDecoder().decode([Product].self, from: data)
                         customProducts = decoded
+                    } catch {
+                        print("Fehler beim Laden der benutzerdefinierten Produkte: \(error)")
                     }
                 }
                 if let data = UserDefaults.standard.data(forKey: "customCafeProducts") {
-                    if let decoded = try? JSONDecoder().decode([Product].self, from: data) {
+                    do {
+                        let decoded = try JSONDecoder().decode([Product].self, from: data)
                         customCafeProducts = decoded
+                    } catch {
+                        print("Fehler beim Laden der benutzerdefinierten Café-Produkte: \(error)")
                     }
                 }
                 updateProductCounts()
@@ -196,21 +202,32 @@ struct ProductListScreen: View {
                         guard let price = Double(newProductPrice), let image = newProductImage else { return }
                         // Bild speichern
                         let filename = UUID().uuidString + ".jpg"
-                        if let data = image.jpegData(compressionQuality: 0.8) {
-                            let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent(filename)
-                            try? data.write(to: url)
+                        if let data = image.jpegData(compressionQuality: 0.8),
+                           let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+                            let url = documentsURL.appendingPathComponent(filename)
+                            do {
+                                try data.write(to: url)
+                            } catch {
+                                print("Fehler beim Speichern des Bildes: \(error)")
+                            }
                         }
                         // Produktmodell anlegen
                         let newProduct = Product(name: newProductName, price: price, imageFilename: filename)
                         if newProductCategory == 0 {
                             customProducts.append(newProduct)
-                            if let encoded = try? JSONEncoder().encode(customProducts) {
+                            do {
+                                let encoded = try JSONEncoder().encode(customProducts)
                                 UserDefaults.standard.set(encoded, forKey: "customProducts")
+                            } catch {
+                                print("Fehler beim Speichern der benutzerdefinierten Produkte: \(error)")
                             }
                         } else {
                             customCafeProducts.append(newProduct)
-                            if let encoded = try? JSONEncoder().encode(customCafeProducts) {
+                            do {
+                                let encoded = try JSONEncoder().encode(customCafeProducts)
                                 UserDefaults.standard.set(encoded, forKey: "customCafeProducts")
+                            } catch {
+                                print("Fehler beim Speichern der benutzerdefinierten Café-Produkte: \(error)")
                             }
                         }
                         updateProductCounts()
@@ -269,15 +286,21 @@ struct ProductListScreen: View {
             products[index] = updated
         } else if let index = customProducts.firstIndex(where: { $0.id == updated.id }) {
             customProducts[index] = updated
-            if let encoded = try? JSONEncoder().encode(customProducts) {
+            do {
+                let encoded = try JSONEncoder().encode(customProducts)
                 UserDefaults.standard.set(encoded, forKey: "customProducts")
+            } catch {
+                print("Fehler beim Aktualisieren der benutzerdefinierten Produkte: \(error)")
             }
         } else if let index = cafeProducts.firstIndex(where: { $0.id == updated.id }) {
             cafeProducts[index] = updated
         } else if let index = customCafeProducts.firstIndex(where: { $0.id == updated.id }) {
             customCafeProducts[index] = updated
-            if let encoded = try? JSONEncoder().encode(customCafeProducts) {
+            do {
+                let encoded = try JSONEncoder().encode(customCafeProducts)
                 UserDefaults.standard.set(encoded, forKey: "customCafeProducts")
+            } catch {
+                print("Fehler beim Aktualisieren der benutzerdefinierten Café-Produkte: \(error)")
             }
         }
     }
@@ -297,13 +320,23 @@ struct ProductListScreen: View {
     private func productRow(for product: Product) -> some View {
         HStack {
             // Bildanzeige: erst Dokumentenverzeichnis prüfen, sonst Asset
-            let docURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent(product.imageFilename)
-            if FileManager.default.fileExists(atPath: docURL.path), let uiImage = UIImage(contentsOfFile: docURL.path) {
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 200, height: 200)
-                    .padding(.trailing, 15)
+            if let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+                let docURL = documentsURL.appendingPathComponent(product.imageFilename)
+                if FileManager.default.fileExists(atPath: docURL.path), let uiImage = UIImage(contentsOfFile: docURL.path) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 200, height: 200)
+                        .padding(.trailing, 15)
+                        .accessibilityLabel("Produktbild: \(product.name)")
+                } else {
+                    Image(product.imageFilename)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 200, height: 200)
+                        .padding(.trailing, 15)
+                        .accessibilityLabel("Produktbild: \(product.name)")
+                }
             } else {
                 Image(product.imageFilename)
                     .resizable()
@@ -333,6 +366,8 @@ struct ProductListScreen: View {
                             .foregroundColor(.blue)
                     }
                     .buttonStyle(PlainButtonStyle())
+                    .accessibilityLabel("Produkt bearbeiten: \(product.name)")
+                    .accessibilityHint("Tippen Sie, um das Produkt zu bearbeiten")
                     
                     // Deaktivieren Button
                     Button(action: {
@@ -361,6 +396,8 @@ struct ProductListScreen: View {
                         .foregroundColor(.green)
                 }
                 .buttonStyle(BorderlessButtonStyle())
+                .accessibilityLabel("\(product.name) hinzufügen")
+                .accessibilityHint("Tippen Sie, um ein \(product.name) zum Warenkorb hinzuzufügen")
                 let count = orderSession.productCounts[product.id] ?? 0
                 Text("\(count)")
                     .frame(width: 60, alignment: .center)
@@ -375,6 +412,8 @@ struct ProductListScreen: View {
                         .foregroundColor(.red)
                 }
                 .buttonStyle(BorderlessButtonStyle())
+                .accessibilityLabel("\(product.name) entfernen")
+                .accessibilityHint("Tippen Sie, um ein \(product.name) aus dem Warenkorb zu entfernen")
             }
         }
         .padding(.vertical, 8)
@@ -393,14 +432,23 @@ struct ProductListScreen: View {
     private func deactivatedProductRow(for product: Product) -> some View {
         HStack {
             // Bildanzeige: erst Dokumentenverzeichnis prüfen, sonst Asset
-            let docURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent(product.imageFilename)
-            if FileManager.default.fileExists(atPath: docURL.path), let uiImage = UIImage(contentsOfFile: docURL.path) {
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 200, height: 200)
-                    .padding(.trailing, 15)
-                    .opacity(0.5)
+            if let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+                let docURL = documentsURL.appendingPathComponent(product.imageFilename)
+                if FileManager.default.fileExists(atPath: docURL.path), let uiImage = UIImage(contentsOfFile: docURL.path) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 200, height: 200)
+                        .padding(.trailing, 15)
+                        .opacity(0.5)
+                } else {
+                    Image(product.imageFilename)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 200, height: 200)
+                        .padding(.trailing, 15)
+                        .opacity(0.5)
+                }
             } else {
                 Image(product.imageFilename)
                     .resizable()
@@ -457,8 +505,11 @@ struct ProductListScreen: View {
         custom = Array(combined.dropFirst(original.count))
 
         // Custom speichern
-        if let encoded = try? JSONEncoder().encode(custom) {
+        do {
+            let encoded = try JSONEncoder().encode(custom)
             UserDefaults.standard.set(encoded, forKey: "customProducts")
+        } catch {
+            print("Fehler beim Speichern der verschobenen Produkte: \(error)")
         }
     }
     
@@ -485,10 +536,13 @@ struct ProductListScreen: View {
         
         // Bilddatei löschen, falls es eine benutzerdefinierte Datei ist
         let filename = product.imageFilename
-        if !filename.isEmpty {
-            let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        if !filename.isEmpty, let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
             let imageURL = documentsURL.appendingPathComponent(filename)
-            try? FileManager.default.removeItem(at: imageURL)
+            do {
+                try FileManager.default.removeItem(at: imageURL)
+            } catch {
+                print("Fehler beim Löschen der Bilddatei: \(error)")
+            }
         }
     }
 }

@@ -54,6 +54,8 @@ struct ChangeScreen: View {
         } else {
             return "Du musst \(euros) € und \(cents) Cent zurückgeben"
         }
+        
+        
     }
 
     var body: some View {

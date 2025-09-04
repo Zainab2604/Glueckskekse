@@ -5,7 +5,12 @@ struct StartScreen: View {
 
     @AppStorage("isParent") var isParent: Bool = false
     @State private var parentCodeInput = ""
-    let parentCode = "2839" //  Eltern-Code
+    // Eltern-Code wird sicher aus UserDefaults geladen
+    var parentCode: String {
+        UserDefaults.standard.string(forKey: "parentCode") ?? "2839"
+    }
+    
+    @State private var showPrivacyPolicy = false
 
     var body: some View {
         ZStack {
@@ -16,6 +21,7 @@ struct StartScreen: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: 400, height: 400)
+                    .accessibilityLabel("Glückskekse Logo")
 
                 // Eltern-Login-Bereich
                 VStack(spacing: 10) {
@@ -23,6 +29,8 @@ struct StartScreen: View {
                     SecureField("Eltern-Code", text: $parentCodeInput)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .frame(width: 200)
+                        .accessibilityLabel("Eltern-Code Eingabe")
+                        .accessibilityHint("Geben Sie den vierstelligen Eltern-Code ein")
                     Button("Einloggen") {
                         if parentCodeInput == parentCode {
                             isParent = true
@@ -56,6 +64,32 @@ struct StartScreen: View {
                         .cornerRadius(10)
                 }
             }
+            
+            // Info-Button in der rechten unteren Ecke
+            VStack {
+                Spacer()
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        showPrivacyPolicy = true
+                    }) {
+                        Image(systemName: "info.circle")
+                            .font(.title2)
+                            .foregroundColor(.blue)
+                            .padding(12)
+                            .background(Color.white.opacity(0.9))
+                            .clipShape(Circle())
+                            .shadow(radius: 2)
+                    }
+                    .accessibilityLabel("App-Informationen und Datenschutz")
+                    .accessibilityHint("Tippen Sie für Informationen über die App und die Datenschutzerklärung")
+                }
+                .padding(.bottom, 20)
+                .padding(.trailing, 20)
+            }
+        }
+        .sheet(isPresented: $showPrivacyPolicy) {
+            PrivacyPolicyView()
         }
     }
 }

@@ -17,20 +17,28 @@ class ProductListViewModel: ObservableObject {
     
     func loadProducts() {
         guard let data = UserDefaults.standard.data(forKey: productsKey) else { return }
-        if let decoded = try? JSONDecoder().decode([Product].self, from: data) {
+        do {
+            let decoded = try JSONDecoder().decode([Product].self, from: data)
             self.products = decoded
+        } catch {
+            print("Fehler beim Laden der Produkte: \(error)")
         }
     }
     
     func saveProducts() {
-        if let encoded = try? JSONEncoder().encode(products) {
+        do {
+            let encoded = try JSONEncoder().encode(products)
             UserDefaults.standard.set(encoded, forKey: productsKey)
+        } catch {
+            print("Fehler beim Speichern der Produkte: \(error)")
         }
     }
     
     // Hilfsfunktion zum Bildpfad
-    static func imageURL(for filename: String) -> URL {
-        let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+    static func imageURL(for filename: String) -> URL? {
+        guard let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            return nil
+        }
         return documents.appendingPathComponent(filename)
     }
 }

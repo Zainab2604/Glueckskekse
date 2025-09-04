@@ -255,6 +255,8 @@
 				DEVELOPMENT_ASSET_PATHS = "\"Glueckskekse_App/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Glückskekse";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Diese App benötigt Zugriff auf Ihre Fotos, um Produktbilder für das Glückskekse-Sortiment hinzuzufügen.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -293,6 +295,8 @@
 				DEVELOPMENT_ASSET_PATHS = "\"Glueckskekse_App/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Glückskekse";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Diese App benötigt Zugriff auf Ihre Fotos, um Produktbilder für das Glückskekse-Sortiment hinzuzufügen.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
