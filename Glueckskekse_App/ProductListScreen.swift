@@ -1,5 +1,5 @@
 import SwiftUI
-import PhotosUI
+import Photos
 
 struct ProductListScreen: View {
     @AppStorage("isParent") var isParent: Bool = false
