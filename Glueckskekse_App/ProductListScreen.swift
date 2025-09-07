@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 struct ProductListScreen: View {
     @AppStorage("isParent") var isParent: Bool = false
@@ -35,6 +36,7 @@ struct ProductListScreen: View {
     @State private var newProductCategory = 0 // 0 = Sortiment, 1 = Café
     @State private var newProductImage: UIImage? = nil
     @State private var showImagePicker = false
+    @State private var showPhotoPermissionAlert = false
     @State private var customProducts: [Product] = []
     @State private var customCafeProducts: [Product] = []
 
@@ -183,7 +185,7 @@ struct ProductListScreen: View {
                     .pickerStyle(SegmentedPickerStyle())
                     .padding(.horizontal)
                     Button(action: {
-                        showImagePicker = true
+                        checkPhotoPermissionAndShowPicker()
                     }) {
                         if let image = newProductImage {
                             Image(uiImage: image)
@@ -278,6 +280,14 @@ struct ProductListScreen: View {
                     updateProduct(updatedProduct)
                 }
             }
+        }
+        .alert("Foto-Zugriff", isPresented: $showPhotoPermissionAlert) {
+            Button("Abbrechen", role: .cancel) { }
+            Button("Einstellungen öffnen") {
+                openAppSettings()
+            }
+        } message: {
+            Text("Um Produktbilder hinzuzufügen, benötigt die App Zugriff auf Ihre Fotos. Bitte gewähren Sie den Zugriff in den Einstellungen.")
         }
     }
 
@@ -542,6 +552,41 @@ struct ProductListScreen: View {
                 try FileManager.default.removeItem(at: imageURL)
             } catch {
                 print("Fehler beim Löschen der Bilddatei: \(error)")
+            }
+        }
+    }
+    
+    private func checkPhotoPermissionAndShowPicker() {
+        // Prüfe den aktuellen Berechtigungsstatus
+        let status = PHPhotoLibrary.authorizationStatus()
+        
+        switch status {
+        case .authorized, .limited:
+            // Berechtigung bereits erteilt - ImagePicker direkt öffnen
+            showImagePicker = true
+        case .denied, .restricted:
+            // Berechtigung verweigert - Alert zeigen
+            showPhotoPermissionAlert = true
+        case .notDetermined:
+            // Noch nicht gefragt - iOS fragt automatisch
+            PHPhotoLibrary.requestAuthorization { newStatus in
+                DispatchQueue.main.async {
+                    if newStatus == .authorized || newStatus == .limited {
+                        showImagePicker = true
+                    } else {
+                        showPhotoPermissionAlert = true
+                    }
+                }
+            }
+        @unknown default:
+            showPhotoPermissionAlert = true
+        }
+    }
+    
+    private func openAppSettings() {
+        if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
+            if UIApplication.shared.canOpenURL(settingsUrl) {
+                UIApplication.shared.open(settingsUrl)
             }
         }
     }
