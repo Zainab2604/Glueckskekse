@@ -111,9 +111,9 @@ Wir behalten uns vor, diese Datenschutzerklärung bei Bedarf zu aktualisieren. �
 ## 10. Kontakt
 **Bei Fragen zum Datenschutz:**
 
-Entwicklerin: Zainab Mohamed Basheer  
-**E-Mail:** zainab.mohamedbasheer@gmail.com 
-**App:** Glückskekse (iOS App Store)
+- Entwicklerin: Zainab Mohamed Basheer  
+- **E-Mail:** zainab.mohamedbasheer@gmail.com 
+- **App:** Glückskekse (iOS App Store)
 
 ## 11. Rechtsgrundlagen (DSGVO)
 Die Verarbeitung Ihrer Daten erfolgt auf folgenden Rechtsgrundlagen:
