@@ -24,7 +24,7 @@ Diese Aufgaben erfordern gute Kommunikationsfähigkeiten, bei denen die Jugendli
 
 ## 🚀 Technische Details
 
-- **Plattform**: iOS (iPhone/iPad)
+- **Plattform**: iOS 
 - **Sprache**: Deutsch
 - **Entwickelt mit**: SwiftUI
 - **Daten**: Alle Daten werden lokal auf dem Gerät gespeichert
