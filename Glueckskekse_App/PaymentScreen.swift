@@ -39,7 +39,7 @@ struct PaymentScreen: View {
 
     var body: some View {
         ZStack {
-            Color.mint.edgesIgnoringSafeArea(.all)
+            Color.white.edgesIgnoringSafeArea(.all)
             
             VStack {
                 Text("Wie viel hat der Kunde gezahlt?")
@@ -113,7 +113,7 @@ struct PaymentScreen: View {
                         navigateToNextScreen = true // Navigation aktivieren
                     }
                 }) {
-                    Text("Weiter")
+                    Text("➞")
                         .padding()
                         .font(.largeTitle)
                         .bold()
@@ -135,7 +135,6 @@ struct PaymentScreen: View {
                 
                 Spacer()
             }
-            .navigationTitle("Bezahlen")
         }
     }
 

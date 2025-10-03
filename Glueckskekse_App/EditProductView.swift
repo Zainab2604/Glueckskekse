@@ -2,20 +2,24 @@ import SwiftUI
 
 struct EditProductView: View {
     let originalProduct: Product
+    let categories: [Category]
     var onSave: (Product) -> Void
     @Environment(\.presentationMode) var presentationMode
     @State private var productName: String
     @State private var productPrice: String
+    @State private var productCategoryId: UUID?
     @State private var productImage: UIImage? = nil
     @State private var showImagePicker = false
     @State private var hasImageChanged = false
     
-    init(product: Product, onSave: @escaping (Product) -> Void) {
+    init(product: Product, categories: [Category], onSave: @escaping (Product) -> Void) {
         self.originalProduct = product
+        self.categories = categories
         self.onSave = onSave
         // Werte direkt beim Initialisieren setzen
         self._productName = State(initialValue: product.name)
         self._productPrice = State(initialValue: String(format: "%.2f", product.price))
+        self._productCategoryId = State(initialValue: product.categoryId)
     }
     
     var body: some View {
@@ -54,6 +58,15 @@ struct EditProductView: View {
                     TextField("Preis in Euro", text: $productPrice)
                         .keyboardType(.decimalPad)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
+                    
+                    // Kategorie-Picker
+                    Picker("Kategorie", selection: $productCategoryId) {
+                        Text("Keine Kategorie").tag(nil as UUID?)
+                        ForEach(categories) { category in
+                            Text(category.name).tag(category.id as UUID?)
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
                     
                     // Bild ändern Button
                     Button(action: {
@@ -110,7 +123,9 @@ struct EditProductView: View {
                                 id: originalProduct.id,
                                 name: productName,
                                 price: newPrice,
-                                imageFilename: updatedImageFilename
+                                imageFilename: updatedImageFilename,
+                                isActive: originalProduct.isActive,
+                                categoryId: productCategoryId
                             )
                             onSave(updatedProduct)
                         }

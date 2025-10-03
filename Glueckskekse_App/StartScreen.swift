@@ -7,14 +7,14 @@ struct StartScreen: View {
     @State private var parentCodeInput = ""
     // Eltern-Code wird sicher aus UserDefaults geladen
     var parentCode: String {
-        UserDefaults.standard.string(forKey: "parentCode") ?? "2839"
+        UserDefaults.standard.string(forKey: "parentCode") ?? "2604"
     }
     
     @State private var showPrivacyPolicy = false
 
     var body: some View {
         ZStack {
-            Color.mint.edgesIgnoringSafeArea(.all)
+            Color.white.edgesIgnoringSafeArea(.all)
             VStack(spacing: 20) {
                 
                 Image("logo")

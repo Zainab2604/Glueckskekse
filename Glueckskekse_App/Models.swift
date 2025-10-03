@@ -8,6 +8,19 @@ enum AppScreen: Hashable {
     case change(totalSum: Double, paidAmount: Double)
 }
 
+// MARK: - Category Model
+struct Category: Identifiable, Codable, Hashable {
+    let id: UUID
+    var name: String
+    var imageFilename: String
+    
+    init(id: UUID = UUID(), name: String, imageFilename: String) {
+        self.id = id
+        self.name = name
+        self.imageFilename = imageFilename
+    }
+}
+
 // MARK: - Product Model
 struct Product: Identifiable, Codable {
     let id: UUID
@@ -15,12 +28,14 @@ struct Product: Identifiable, Codable {
     var price: Double
     var imageFilename: String // Dateiname des gespeicherten Bildes
     var isActive: Bool // Status ob das Produkt aktiv ist
+    var categoryId: UUID? // Kategorie-Zuordnung
     
-    init(id: UUID = UUID(), name: String, price: Double, imageFilename: String, isActive: Bool = true) {
+    init(id: UUID = UUID(), name: String, price: Double, imageFilename: String, isActive: Bool = true, categoryId: UUID? = nil) {
         self.id = id
         self.name = name
         self.price = price
         self.imageFilename = imageFilename
         self.isActive = isActive
+        self.categoryId = categoryId
     }
 }
