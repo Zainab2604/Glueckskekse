@@ -61,7 +61,7 @@ struct ChangeScreen: View {
     var body: some View {
         ZStack {
             // Hintergrundfarbe
-            Color.white
+            Color(red: 0.95, green: 0.92, blue: 0.85)
                 .edgesIgnoringSafeArea(.all)
             VStack {
                 Text(formatChangeText(change))

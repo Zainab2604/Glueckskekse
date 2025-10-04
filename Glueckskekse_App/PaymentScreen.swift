@@ -39,7 +39,7 @@ struct PaymentScreen: View {
 
     var body: some View {
         ZStack {
-            Color.white.edgesIgnoringSafeArea(.all)
+            Color(red: 0.95, green: 0.92, blue: 0.85).edgesIgnoringSafeArea(.all)
             
             VStack {
                 Text("Wie viel hat der Kunde gezahlt?")

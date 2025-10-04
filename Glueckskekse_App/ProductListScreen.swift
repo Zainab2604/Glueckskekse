@@ -66,8 +66,8 @@ struct ProductListScreen: View {
     
     private func createDefaultCategories() {
         categories = [
-            Category(name: "Marmelade + Caramel", imageFilename: "logo"),
-            Category(name: "Gewürze", imageFilename: "logo")
+            Category(name: "Marmelade + Caramel", imageFilename: "marmelade&caramel"),
+            Category(name: "Gewürze", imageFilename: "gewürze")
         ]
         saveCategories()
     }
@@ -178,7 +178,7 @@ struct ProductListScreen: View {
     var body: some View {
         ZStack {
             // Hintergrundfarbe
-            Color.white
+            Color(red: 0.95, green: 0.92, blue: 0.85)
                 .edgesIgnoringSafeArea(.all)
             
             VStack {

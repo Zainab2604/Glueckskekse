@@ -61,7 +61,6 @@ struct EditProductView: View {
                     
                     // Kategorie-Picker
                     Picker("Kategorie", selection: $productCategoryId) {
-                        Text("Keine Kategorie").tag(nil as UUID?)
                         ForEach(categories) { category in
                             Text(category.name).tag(category.id as UUID?)
                         }
